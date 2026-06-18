@@ -1,6 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DISTORTIONS } from "./distortions";
 import "./App.css";
+
+// ── Storage helpers ──────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "triple-column-journal";
+
+function loadJournal() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveJournal(sessions) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+// ── Data factories ───────────────────────────────────────────────────────────
 
 const newEntry = () => ({
   id: Date.now() + Math.random(),
@@ -8,6 +27,34 @@ const newEntry = () => ({
   distortions: [],
   rationalResponse: "",
 });
+
+const newSession = () => ({
+  id: Date.now(),
+  createdAt: new Date().toISOString(),
+  title: "",
+  entries: [newEntry()],
+});
+
+// ── Formatting ───────────────────────────────────────────────────────────────
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+// ── DistortionDropdown ───────────────────────────────────────────────────────
 
 function DistortionDropdown({ selected, onChange }) {
   const [open, setOpen] = useState(false);
@@ -84,6 +131,8 @@ function DistortionDropdown({ selected, onChange }) {
   );
 }
 
+// ── EntryRow ─────────────────────────────────────────────────────────────────
+
 function EntryRow({ entry, onChange, onDelete, index, isOnly }) {
   const update = (field, value) => onChange({ ...entry, [field]: value });
 
@@ -95,7 +144,7 @@ function EntryRow({ entry, onChange, onDelete, index, isOnly }) {
         <div className="column col-automatic">
           <textarea
             className="col-textarea"
-            placeholder={`Write your automatic thought here…\ne.g., "I'll never get this project right and everyone will know."`}
+            placeholder={'Write your automatic thought here…\ne.g., "I\'ll never get this project right and everyone will know."'}
             value={entry.automaticThought}
             onChange={(e) => update("automaticThought", e.target.value)}
           />
@@ -111,7 +160,7 @@ function EntryRow({ entry, onChange, onDelete, index, isOnly }) {
         <div className="column col-rational">
           <textarea
             className="col-textarea"
-            placeholder={`Write a rational response here…\ne.g., "I have completed similar projects. I may need tweaks, but I am fully capable."`}
+            placeholder={'Write a rational response here…\ne.g., "I have completed similar projects. I may need tweaks, but I am fully capable."'}
             value={entry.rationalResponse}
             onChange={(e) => update("rationalResponse", e.target.value)}
           />
@@ -132,71 +181,208 @@ function EntryRow({ entry, onChange, onDelete, index, isOnly }) {
   );
 }
 
-export default function App() {
-  const [entries, setEntries] = useState([newEntry()]);
+// ── Sidebar ──────────────────────────────────────────────────────────────────
 
-  const addEntry = () => setEntries((prev) => [...prev, newEntry()]);
-  const updateEntry = (id, updated) =>
-    setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
-  const deleteEntry = (id) =>
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-
+function Sidebar({ sessions, activeId, onSelect, onNew, onDelete }) {
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Triple Column Technique</h1>
-        <p className="subtitle">
-          A cognitive behavioral therapy exercise for identifying and reframing negative automatic thoughts.
-        </p>
-      </header>
-
-      <div className="table-wrapper">
-        <div className="col-headers">
-          <div className="col-num-spacer" aria-hidden="true" />
-          <div className="col-header col-automatic">
-            <span className="col-label">Column 1</span>
-            <h2>Automatic Thoughts</h2>
-            <p>Write down the exact negative thought that triggered your emotion.</p>
-          </div>
-          <div className="col-header col-distortions">
-            <span className="col-label">Column 2</span>
-            <h2>Cognitive Distortions</h2>
-            <p>Identify the thinking error(s) present in the thought.</p>
-          </div>
-          <div className="col-header col-rational">
-            <span className="col-label">Column 3</span>
-            <h2>Rational Response</h2>
-            <p>Write an objective, fact-based reply to challenge the thought.</p>
-          </div>
-          <div className="col-del-spacer" aria-hidden="true" />
-        </div>
-
-        <div className="entries">
-          {entries.map((entry, i) => (
-            <EntryRow
-              key={entry.id}
-              index={i}
-              entry={entry}
-              onChange={(updated) => updateEntry(entry.id, updated)}
-              onDelete={() => deleteEntry(entry.id)}
-              isOnly={entries.length === 1}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="add-row">
-        <button type="button" className="add-btn" onClick={addEntry}>
-          + Add Entry
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <span className="sidebar-title">Journal</span>
+        <button className="new-session-btn" onClick={onNew} title="New session">
+          + New
         </button>
       </div>
 
-      <footer className="app-footer">
-        <p>
-          Based on the Triple Column Technique by Dr. David D. Burns,{" "}
-          <em>Feeling Good: The New Mood Therapy</em>.
-        </p>
-      </footer>
+      <div className="session-list">
+        {sessions.length === 0 && (
+          <p className="sidebar-empty">No sessions yet.</p>
+        )}
+        {[...sessions].reverse().map((s) => {
+          const firstThought = s.entries.find((e) => e.automaticThought.trim());
+          const preview = firstThought
+            ? firstThought.automaticThought.slice(0, 60) + (firstThought.automaticThought.length > 60 ? "…" : "")
+            : "Empty session";
+          return (
+            <div
+              key={s.id}
+              className={`session-item${s.id === activeId ? " active" : ""}`}
+              onClick={() => onSelect(s.id)}
+            >
+              <div className="session-item-top">
+                <span className="session-date">{formatDate(s.createdAt)}</span>
+                <button
+                  className="session-delete"
+                  onClick={(e) => { e.stopPropagation(); onDelete(s.id); }}
+                  aria-label="Delete session"
+                  title="Delete session"
+                >
+                  ✕
+                </button>
+              </div>
+              <span className="session-time">{formatTime(s.createdAt)}</span>
+              {s.title && <span className="session-custom-title">{s.title}</span>}
+              <span className="session-preview">{preview}</span>
+              <span className="session-count">
+                {s.entries.length} {s.entries.length === 1 ? "thought" : "thoughts"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}
+
+// ── App ──────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [sessions, setSessions] = useState(() => {
+    const saved = loadJournal();
+    if (saved.length > 0) return saved;
+    const first = newSession();
+    return [first];
+  });
+  const [activeId, setActiveId] = useState(() => {
+    const saved = loadJournal();
+    return saved.length > 0 ? saved[saved.length - 1].id : sessions[0]?.id;
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const active = sessions.find((s) => s.id === activeId) ?? sessions[sessions.length - 1];
+
+  useEffect(() => {
+    saveJournal(sessions);
+  }, [sessions]);
+
+  const updateSession = (updated) =>
+    setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+
+  const addSession = () => {
+    const s = newSession();
+    setSessions((prev) => [...prev, s]);
+    setActiveId(s.id);
+  };
+
+  const deleteSession = (id) => {
+    setSessions((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      if (next.length === 0) {
+        const s = newSession();
+        setActiveId(s.id);
+        return [s];
+      }
+      if (id === activeId) setActiveId(next[next.length - 1].id);
+      return next;
+    });
+  };
+
+  const addEntry = () =>
+    updateSession({ ...active, entries: [...active.entries, newEntry()] });
+
+  const updateEntry = (entryId, updated) =>
+    updateSession({
+      ...active,
+      entries: active.entries.map((e) => (e.id === entryId ? updated : e)),
+    });
+
+  const deleteEntry = (entryId) =>
+    updateSession({
+      ...active,
+      entries: active.entries.filter((e) => e.id !== entryId),
+    });
+
+  if (!active) return null;
+
+  return (
+    <div className={`app-shell${sidebarOpen ? " sidebar-open" : ""}`}>
+      {sidebarOpen && (
+        <Sidebar
+          sessions={sessions}
+          activeId={active.id}
+          onSelect={setActiveId}
+          onNew={addSession}
+          onDelete={deleteSession}
+        />
+      )}
+
+      <div className="main">
+        <header className="app-header">
+          <button
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen((o) => !o)}
+            aria-label="Toggle journal sidebar"
+            title="Toggle journal"
+          >
+            {sidebarOpen ? "◀" : "▶"}
+          </button>
+
+          <div className="header-center">
+            <h1>Triple Column Technique</h1>
+            <p className="subtitle">
+              A cognitive behavioral therapy exercise for identifying and reframing negative automatic thoughts.
+            </p>
+          </div>
+
+          <div className="header-meta">
+            <span className="active-date">{formatDate(active.createdAt)}</span>
+            <input
+              className="session-title-input"
+              placeholder="Add a title (optional)…"
+              value={active.title}
+              onChange={(e) => updateSession({ ...active, title: e.target.value })}
+            />
+            <span className="autosave-badge">Autosaved</span>
+          </div>
+        </header>
+
+        <div className="table-wrapper">
+          <div className="col-headers">
+            <div className="col-num-spacer" aria-hidden="true" />
+            <div className="col-header col-automatic">
+              <span className="col-label">Column 1</span>
+              <h2>Automatic Thoughts</h2>
+              <p>Write down the exact negative thought that triggered your emotion.</p>
+            </div>
+            <div className="col-header col-distortions">
+              <span className="col-label">Column 2</span>
+              <h2>Cognitive Distortions</h2>
+              <p>Identify the thinking error(s) present in the thought.</p>
+            </div>
+            <div className="col-header col-rational">
+              <span className="col-label">Column 3</span>
+              <h2>Rational Response</h2>
+              <p>Write an objective, fact-based reply to challenge the thought.</p>
+            </div>
+            <div className="col-del-spacer" aria-hidden="true" />
+          </div>
+
+          <div className="entries">
+            {active.entries.map((entry, i) => (
+              <EntryRow
+                key={entry.id}
+                index={i}
+                entry={entry}
+                onChange={(updated) => updateEntry(entry.id, updated)}
+                onDelete={() => deleteEntry(entry.id)}
+                isOnly={active.entries.length === 1}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="add-row">
+          <button type="button" className="add-btn" onClick={addEntry}>
+            + Add Thought
+          </button>
+        </div>
+
+        <footer className="app-footer">
+          <p>
+            Based on the Triple Column Technique by Dr. David D. Burns,{" "}
+            <em>Feeling Good: The New Mood Therapy</em>.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }
