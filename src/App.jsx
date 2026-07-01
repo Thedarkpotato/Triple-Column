@@ -232,7 +232,7 @@ export default function App() {
     const saved = loadJournal();
     return saved.length > 0 ? saved[saved.length - 1].id : sessions[0]?.id;
   });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 600);
 
   const active = sessions.find((s) => s.id === activeId) ?? sessions[sessions.length - 1];
 
