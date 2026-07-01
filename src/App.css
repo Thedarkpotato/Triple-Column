@@ -27,6 +27,7 @@ body {
   line-height: 1.5;
 }
 
+/* ── Shell ── */
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -43,6 +44,7 @@ body {
   width: 100%;
 }
 
+/* ── Sidebar ── */
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
@@ -171,6 +173,7 @@ body {
 .session-item:hover .session-delete { opacity: 1; }
 .session-delete:hover { color: #e53e3e; }
 
+/* ── Header ── */
 .app-header {
   display: grid;
   grid-template-columns: 36px 1fr auto;
@@ -241,6 +244,7 @@ body {
   letter-spacing: .04em;
 }
 
+/* ── Table wrapper ── */
 .table-wrapper {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -249,6 +253,7 @@ body {
   overflow: visible;
 }
 
+/* ── Column headers ── */
 .col-headers {
   display: grid;
   grid-template-columns: 36px 1fr 1fr 1fr 44px;
@@ -278,6 +283,7 @@ body {
 .col-header h2 { margin: 0 0 4px; font-size: 1rem; }
 .col-header p  { margin: 0; font-size: 13px; color: var(--muted); }
 
+/* ── Entry rows ── */
 .entries { display: flex; flex-direction: column; }
 
 .entry-row {
@@ -303,6 +309,7 @@ body {
 .column { padding: 12px 14px; border-left: 1px solid var(--border); }
 .column:first-child { border-left: none; }
 
+/* ── Textarea ── */
 .col-textarea {
   width: 100%;
   min-height: 110px;
@@ -323,6 +330,7 @@ body {
   box-shadow: 0 0 0 3px rgba(74,144,217,.15);
 }
 
+/* ── Delete button ── */
 .delete-btn {
   display: flex;
   align-items: flex-start;
@@ -338,6 +346,7 @@ body {
 .delete-btn:hover:not(:disabled) { color: #e53e3e; }
 .delete-btn:disabled { opacity: .3; cursor: not-allowed; }
 
+/* ── Distortion Dropdown ── */
 .dropdown-wrapper { position: relative; }
 
 .dropdown-trigger {
@@ -416,6 +425,7 @@ body {
 .item-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .item-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
 
+/* ── Tags ── */
 .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
 .tag {
@@ -443,6 +453,7 @@ body {
 }
 .tag-remove:hover { opacity: 1; }
 
+/* ── Add row ── */
 .add-row { display: flex; justify-content: center; margin-top: 20px; }
 
 .add-btn {
@@ -460,12 +471,13 @@ body {
 .add-btn:hover { background: var(--blue-dk); }
 .add-btn:active { transform: scale(.97); }
 
+/* ── Footer ── */
 .app-footer { margin-top: 40px; text-align: center; font-size: 13px; color: var(--muted); }
 .app-footer p { margin: 0; }
 
 .sidebar-mobile-backdrop { display: none; }
 
-/* ── Tablet ── */
+/* ── Tablet & Mobile ── */
 @media (max-width: 900px) {
   .sidebar { width: 240px; }
 
@@ -487,60 +499,22 @@ body {
   }
   .session-title-input { width: auto; flex: 1; min-width: 120px; }
 
-  .col-headers { display: none; }
+  /* Horizontally scrollable table */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-  /* Card layout for entries */
-  .table-wrapper { background: transparent; border: none; box-shadow: none; }
-  .entries { gap: 16px; }
-
+  /* Fix widths so columns stay readable when scrolling */
+  .col-headers {
+    min-width: 700px;
+  }
   .entry-row {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    position: relative;
+    min-width: 700px;
   }
-
-  .entry-number { display: none; }
-
-  .delete-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 4px 8px;
-    font-size: 16px;
-    z-index: 1;
-  }
-
-  .columns { display: flex; flex-direction: column; }
-
-  .column {
-    padding: 14px 16px;
-    border-left: none;
-    border-top: 1px solid var(--border);
-  }
-  .column:first-child { border-top: none; }
-
-  .column::before {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    width: fit-content;
-  }
-  .col-automatic::before   { content: "Automatic Thought";     background: var(--blue-lt);   color: var(--blue-dk); }
-  .col-distortions::before { content: "Cognitive Distortions"; background: var(--purple-lt); color: var(--purple); }
-  .col-rational::before    { content: "Rational Response";     background: var(--green-lt);  color: var(--green); }
 
   /* Prevent iOS zoom on input focus */
-  .col-textarea { font-size: 16px; min-height: 90px; }
+  .col-textarea { font-size: 16px; }
   .dropdown-trigger { font-size: 16px; }
 
   .add-btn { width: 100%; }
