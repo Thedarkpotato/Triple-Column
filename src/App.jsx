@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { DISTORTIONS } from "./distortions";
 import "./App.css";
 
-// ── Storage helpers ──────────────────────────────────────────────────────────
-
 const STORAGE_KEY = "triple-column-journal";
 
 function loadJournal() {
@@ -19,8 +17,6 @@ function saveJournal(sessions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
 }
 
-// ── Data factories ───────────────────────────────────────────────────────────
-
 const newEntry = () => ({
   id: Date.now() + Math.random(),
   automaticThought: "",
@@ -34,8 +30,6 @@ const newSession = () => ({
   title: "",
   entries: [newEntry()],
 });
-
-// ── Formatting ───────────────────────────────────────────────────────────────
 
 function formatDate(iso) {
   const d = new Date(iso);
@@ -53,8 +47,6 @@ function formatTime(iso) {
     minute: "2-digit",
   });
 }
-
-// ── DistortionDropdown ───────────────────────────────────────────────────────
 
 function DistortionDropdown({ selected, onChange }) {
   const [open, setOpen] = useState(false);
@@ -131,8 +123,6 @@ function DistortionDropdown({ selected, onChange }) {
   );
 }
 
-// ── EntryRow ─────────────────────────────────────────────────────────────────
-
 function EntryRow({ entry, onChange, onDelete, index, isOnly }) {
   const update = (field, value) => onChange({ ...entry, [field]: value });
 
@@ -180,8 +170,6 @@ function EntryRow({ entry, onChange, onDelete, index, isOnly }) {
     </div>
   );
 }
-
-// ── Sidebar ──────────────────────────────────────────────────────────────────
 
 function Sidebar({ sessions, activeId, onSelect, onNew, onDelete }) {
   return (
@@ -232,8 +220,6 @@ function Sidebar({ sessions, activeId, onSelect, onNew, onDelete }) {
     </aside>
   );
 }
-
-// ── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [sessions, setSessions] = useState(() => {
@@ -296,13 +282,16 @@ export default function App() {
   return (
     <div className={`app-shell${sidebarOpen ? " sidebar-open" : ""}`}>
       {sidebarOpen && (
-        <Sidebar
-          sessions={sessions}
-          activeId={active.id}
-          onSelect={setActiveId}
-          onNew={addSession}
-          onDelete={deleteSession}
-        />
+        <>
+          <div className="sidebar-mobile-backdrop" onClick={() => setSidebarOpen(false)} />
+          <Sidebar
+            sessions={sessions}
+            activeId={active.id}
+            onSelect={(id) => { setActiveId(id); setSidebarOpen(false); }}
+            onNew={() => { addSession(); setSidebarOpen(false); }}
+            onDelete={deleteSession}
+          />
+        </>
       )}
 
       <div className="main">

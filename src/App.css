@@ -463,6 +463,10 @@ body {
 .app-footer { margin-top: 40px; text-align: center; font-size: 13px; color: var(--muted); }
 .app-footer p { margin: 0; }
 
+.sidebar-mobile-backdrop {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .sidebar { width: 220px; }
 
@@ -505,6 +509,13 @@ body {
     top: 0;
     z-index: 100;
     box-shadow: 2px 0 12px rgba(0,0,0,.12);
+  }
+  .sidebar-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: rgba(0,0,0,.4);
   }
   .main { padding: 0 16px 40px; }
 }
